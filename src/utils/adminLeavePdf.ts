@@ -1,5 +1,5 @@
-import RNHTMLtoPDF from 'react-native-html-to-pdf';
-import { Share } from 'react-native';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import { AdminLeaveRecord } from '../api/adminLeaveService';
 
 /**
@@ -66,13 +66,17 @@ export async function exportAdminLeavePdf(
     </html>`;
 
   const safeName = employeeFilterName ? employeeFilterName.replace(/\s+/g, '_') : 'All';
-  const file = await RNHTMLtoPDF.convert({
+  const file = await Print.printToFileAsync({
     html,
     fileName: `Leave_Report_${safeName}_${from}_to_${to}`,
-    base64: false,
   });
 
-  if (file.filePath) {
-    await Share.share({ url: `file://${file.filePath}`, title: 'Leave Report' });
+  if (!(await Sharing.isAvailableAsync())) {
+    throw new Error('File sharing is not available on this device.');
   }
+
+  await Sharing.shareAsync(file.uri, {
+    mimeType: 'application/pdf',
+    dialogTitle: 'Leave Report',
+  });
 }
