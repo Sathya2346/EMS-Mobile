@@ -1,5 +1,5 @@
-import RNHTMLtoPDF from 'react-native-html-to-pdf';
-import { Share } from 'react-native';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import { AdminAttendanceRecord } from '../api/adminAttendanceService';
 import { format12HourTime, formatDuration } from './attendanceTime';
 
@@ -77,13 +77,18 @@ export async function exportAdminAttendancePdf(
       </body>
     </html>`;
 
-  const file = await RNHTMLtoPDF.convert({
-    html,
-    fileName: `Attendance_Report_${fromDate}_to_${toDate}`,
-    base64: false,
-  });
+  const file = await Print.printToFileAsync({ html });
 
-  if (file.filePath) {
-    await Share.share({ url: `file://${file.filePath}`, title: 'Attendance Report' });
+  if (!file.uri) {
+    throw new Error('Unable to create the attendance PDF.');
+  }
+
+  if (await Sharing.isAvailableAsync()) {
+    await Sharing.shareAsync(file.uri, {
+      mimeType: 'application/pdf',
+      dialogTitle: 'Attendance Report',
+    });
+  } else {
+    throw new Error('File sharing is not available on this platform.');
   }
 }
