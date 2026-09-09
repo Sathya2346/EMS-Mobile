@@ -1,38 +1,18 @@
 /**
- * Single source of truth for the backend base URL. This app talks to the
- * SAME Spring Boot backend that serves the existing Thymeleaf web
- * frontend (github.com/Sathya2346/employeemanagement) — there is no
- * separate "mobile backend".
+ * Single source of truth for the Spring Boot EMS backend URL.
  *
- * Two parallel API surfaces exist on that backend:
- * 1. `/api/**` — a clean REST layer (controller/api/*) built for
- *    external/mobile clients: auth, employee CRUD, admin onboarding
- *    decisions.
- * 2. Root-path `@ResponseBody` endpoints (e.g. `/attendance/**`,
- *    `/leave/**`, `/admin/settings/**`) — these are what the existing
- *    web frontend's own JavaScript calls via AJAX, and are reused here
- *    for everything that has no `/api` equivalent (attendance, leave,
- *    hourly reports, notifications, settings).
+ * Expo development:
+ * - Android emulator: EXPO_PUBLIC_API_BASE_URL=http://10.0.2.2:8085
+ * - Physical device: EXPO_PUBLIC_API_BASE_URL=http://<PC-LAN-IP>:8085
+ * - iOS simulator: EXPO_PUBLIC_API_BASE_URL=http://localhost:8085
  *
- * Auth is session-cookie based (Spring Security + HttpSession), the same
- * as the web app — there is no bearer token. React Native's networking
- * layer persists cookies across requests the same way a browser does, so
- * logging in via POST /api/auth/login and then calling any other endpoint
- * in the same app session "just works" with no extra plumbing, as long as
- * `credentials` isn't stripped.
- *
- * Update this to point at your running backend:
- * - Local dev (Android emulator talking to your machine): 'http://10.0.2.2:8085'
- * - Local dev (iOS simulator / physical device on same network): 'http://<your-machine-LAN-IP>:8085'
- * - Deployed (e.g. Render): 'https://your-app.onrender.com'
- *
- * Port 8085 (not the Spring Boot default 8080) is set explicitly in the
- * backend's application.properties (`server.port=8085`) — verified
- * directly against that file, not assumed.
+ * The value can be supplied through Expo's EXPO_PUBLIC_* environment
+ * variables. The Android-emulator URL remains the safe local default.
  */
-export const API_BASE_URL = 'http://10.0.2.2:8085';
+export const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_BASE_URL || 'http://10.0.2.2:8085';
 
-/** Default fetch options that make sure session cookies are sent/stored. */
+/** Session-cookie based Spring Security API requests. */
 export const DEFAULT_FETCH_OPTIONS: RequestInit = {
   credentials: 'include',
 };
