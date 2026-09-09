@@ -1,13 +1,10 @@
-import RNFS from 'react-native-fs';
-import { Share } from 'react-native';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 
 /**
- * Port of the source's `<a href="data:application/pdf;base64,...">` /
- * `<a href="data:image/jpeg;base64,...">` download links (Aadhar, PAN,
- * marksheets, certificates, photo). Mobile has no direct data-URI download;
- * the base64 is written to a temp file and handed to the OS share sheet,
- * which lets the admin open it in any installed PDF/image viewer or save
- * it — the mobile equivalent of a browser file download.
+ * Writes a base64 document to the Expo cache directory and opens the native
+ * share/open sheet. This replaces the RN CLI-only react-native-fs path while
+ * preserving the existing admin document-viewing behavior.
  */
 export async function openBase64Document(
   base64: string,
@@ -15,7 +12,14 @@ export async function openBase64Document(
   mimeType: 'application/pdf' | 'image/jpeg',
 ): Promise<void> {
   const extension = mimeType === 'application/pdf' ? 'pdf' : 'jpg';
-  const path = `${RNFS.CachesDirectoryPath}/${filename}.${extension}`;
-  await RNFS.writeFile(path, base64, 'base64');
-  await Share.share({ url: `file://${path}`, title: filename });
+  const path = `${FileSystem.cacheDirectory}${filename}.${extension}`;
+  await FileSystem.writeAsStringAsync(path, base64, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
+
+  if (!(await Sharing.isAvailableAsync())) {
+    throw new Error('File sharing is not available on this device.');
+  }
+
+  await Sharing.shareAsync(path, { mimeType, dialogTitle: filename });
 }
