@@ -1,5 +1,5 @@
-import RNHTMLtoPDF from 'react-native-html-to-pdf';
-import { Share } from 'react-native';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import { HourlyReportRow } from '../api/adminHourlyReportService';
 
 /**
@@ -45,9 +45,17 @@ export async function exportAdminHourlyReportPdf(employeeName: string, rows: Hou
       </body>
     </html>`;
 
-  const file = await RNHTMLtoPDF.convert({ html, fileName: `Hourly_Report_${employeeName}`, base64: false });
+  const file = await Print.printToFileAsync({
+    html,
+    fileName: `Hourly_Report_${employeeName}`,
+  });
 
-  if (file.filePath) {
-    await Share.share({ url: `file://${file.filePath}`, title: 'Hourly Work Report' });
+  if (!(await Sharing.isAvailableAsync())) {
+    throw new Error('File sharing is not available on this device.');
   }
+
+  await Sharing.shareAsync(file.uri, {
+    mimeType: 'application/pdf',
+    dialogTitle: 'Hourly Work Report',
+  });
 }
