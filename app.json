@@ -1,4 +1,23 @@
 {
-  "name": "HrAppMobile",
-  "displayName": "HR App"
+  "expo": {
+    "name": "HR App",
+    "slug": "hr-app-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"],
+    "android": {
+      "package": "com.sathya.hrappmobile",
+      "usesCleartextTraffic": true
+    },
+    "ios": {
+      "bundleIdentifier": "com.sathya.hrappmobile"
+    },
+    "plugins": [
+      "expo-document-picker",
+      "expo-file-system",
+      "expo-sharing",
+      "expo-print"
+    ]
+  }
 }
