@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import DocumentPicker, { types } from 'react-native-document-picker';
-import Feather from 'react-native-vector-icons/Feather';
+import * as DocumentPicker from 'expo-document-picker';
+import { Feather } from '@expo/vector-icons';
 import { MAX_FILE_SIZE_BYTES } from '../../utils/onboardingValidation';
 
 export interface PickedFile {
@@ -20,13 +20,9 @@ interface Props {
 }
 
 /**
- * Port of `<input type="file" class="form-control file-input" accept="...">`
- * wrapped in `.file-input-wrapper`. `react-native-document-picker` stands
- * in for the native file picker — the standard RN way to let the user
- * choose any file (image or PDF) from device storage, matching
- * `accept="image/*,application/pdf"` / `accept="image/*"` on the source
- * inputs. The 2MB size check from the source's `change` listener is
- * reproduced exactly.
+ * Expo-compatible port of the original native file picker.
+ * The source behavior is preserved: image-only or image/PDF selection,
+ * 2MB validation, existing preview, and the same visible control/styles.
  */
 export default function OnboardingFileField({
   onPick,
@@ -42,23 +38,27 @@ export default function OnboardingFileField({
     if (disabled) return;
     setBusy(true);
     try {
-      const result = await DocumentPicker.pickSingle({
-        type: accept === 'imageOnly' ? [types.images] : [types.images, types.pdf],
-        copyTo: 'cachesDirectory',
+      const result = await DocumentPicker.getDocumentAsync({
+        type: accept === 'imageOnly' ? ['image/*'] : ['image/*', 'application/pdf'],
+        copyToCacheDirectory: true,
+        multiple: false,
       });
-      if (result.size != null && result.size > MAX_FILE_SIZE_BYTES) {
+
+      if (result.canceled || !result.assets?.length) return;
+
+      const file = result.assets[0];
+      if (file.size != null && file.size > MAX_FILE_SIZE_BYTES) {
         Alert.alert('File size exceeds 2MB limit. Please upload a smaller file.');
         return;
       }
+
       onPick({
-        uri: result.fileCopyUri || result.uri,
-        name: result.name || 'file',
-        type: result.type || 'application/octet-stream',
+        uri: file.uri,
+        name: file.name || 'file',
+        type: file.mimeType || 'application/octet-stream',
       });
-    } catch (err) {
-      if (!DocumentPicker.isCancel(err)) {
-        Alert.alert('Could not select the file. Please try again.');
-      }
+    } catch {
+      Alert.alert('Could not select the file. Please try again.');
     } finally {
       setBusy(false);
     }
